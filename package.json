@@ -1,0 +1,30 @@
+{
+  "name": "mnemosine",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "app to create notes",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RubensRafael/Mnemosine.git"
+  },
+  "keywords": [
+    "express",
+    "graphql",
+    "mongodb"
+  ],
+  "author": "Rubens Rafael",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RubensRafael/Mnemosine/issues"
+  },
+  "homepage": "https://github.com/RubensRafael/Mnemosine#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "express-graphql": "^0.12.0",
+    "graphql": "^16.0.1"
+  }
+}
