@@ -16,6 +16,7 @@ var schema = buildSchema(`
 
   type Query {
     loginUser(email: String, password: String) : String!
+    teste: String!
   }
 `);
 

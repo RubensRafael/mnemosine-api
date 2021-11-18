@@ -30,7 +30,6 @@ var resolvers = {
     let jwtToken = jwt.sign({id : newUser._id}, process.env.JWTKEY, {expiresIn: "3 days"})
     await cursor.close()
     return jwtToken
-   
   },
   loginUser : async ({email, password}) =>{
 
@@ -38,12 +37,13 @@ var resolvers = {
     
     if(user === null){throw Error("The email or the password is wrong.")}
     await bcrypt.compare(password, user.password).then((result)=>{
-      if(result === false){console.log('a');throw Error("The email or the password is wrong.")}
+      if(result === false){throw Error("The email or the password is wrong.")}
     })
     let jwtToken = jwt.sign({id : user._id}, process.env.JWTKEY, {expiresIn: "3 days"})
-    return jwtToken
-
-    
+    return jwtToken    
+  },
+  teste : async ()=>{
+    return 'teste'
   }
 };
 export default resolvers
