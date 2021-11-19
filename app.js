@@ -53,10 +53,11 @@ app.use(express.json())
 app.use(loggingMiddleware)
 
 
-app.use('/graphql', graphqlHTTP({
+app.use('/graphql', graphqlHTTP((req, res, params) =>({
   schema: schema,
   rootValue: resolvers,
+  context: {userId : res.locals.userId}
   //graphiql: true,
-}));
+})));
 app.listen(port);
 console.log('Running a GraphQL API server at http://localhost:' + port +'/graphql');

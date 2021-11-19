@@ -42,7 +42,8 @@ var resolvers = {
     let jwtToken = jwt.sign({id : user._id}, process.env.JWTKEY, {expiresIn: "3 days"})
     return jwtToken    
   },
-  teste : async ()=>{
+  teste : async ({}, context)=>{
+    console.log(context)
     return 'teste'
   }
 };
