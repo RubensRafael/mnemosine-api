@@ -17,30 +17,38 @@ let users = db.collection("Users")
 var resolvers = {
   createUser: async ({name, email, password}) => {
 
+    // If the email is already registered, throw error
     let cursor = await users.find({email : String(email)})
     let list = await cursor.toArray()
     if(list.length > 0){throw Error("this email already exits")}
 
+    // Create a user with password encrypted
     let newUser = await bcrypt.hash(String(password), 10).then(async (hash)=>{
       let result = await users.insertOne({name:String(name),email:String(email),password:String(hash)})
       let user = await users.findOne({_id:result.insertedId})
       return user
     })
-    
+    // Create a jwt token, with the user Id
     let jwtToken = jwt.sign({id : newUser._id}, process.env.JWTKEY, {expiresIn: "3 days"})
-    await cursor.close()
-    return jwtToken
+
+    await cursor.close()// Close cursor
+    return jwtToken //send token
   },
   loginUser : async ({email, password}) =>{
-
+    // get user by email
     let user = await users.findOne({email : String(email)}, {_id : 1, password : 1})
-    
+
+    // if user not found
     if(user === null){throw Error("The email or the password is wrong.")}
+
+    //Compare password encrypted
     await bcrypt.compare(password, user.password).then((result)=>{
       if(result === false){throw Error("The email or the password is wrong.")}
     })
+    // Create a jwt token, with the user Id
     let jwtToken = jwt.sign({id : user._id}, process.env.JWTKEY, {expiresIn: "3 days"})
-    return jwtToken    
+
+    return jwtToken //send token
   },
   teste : async ({}, context)=>{
     console.log(context)
