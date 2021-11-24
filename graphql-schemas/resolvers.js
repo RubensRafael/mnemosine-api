@@ -71,16 +71,19 @@ var resolvers = {
     })  
     return updatedUser
   },
+  deleteUser : async ({}, context)=>{
+    let deleted = await users.findOneAndDelete({_id:ObjectId(context.userId)},{name : 1}).then((result)=>{
+      
+      if(result.value){}else{throw Error("Something wrong happened (maybe that user is already deleted), try again.")}
+    })
+    return true
+  },
   teste : async ({}, context)=>{
     console.log(typeof context.userId)
 
-    let user = await users.findOne({_id:context.userId})
+    let user = await users.findOne({_id:ObjectId(context.userId)})
     
     return user
   }
 };
 export default resolvers
-/*jwt.verify(token, 'wrong-secret', function(err, decoded) {
-  // err 
-  // decoded undefined
-});*/
