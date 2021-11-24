@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import connect from '../database.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { ObjectId } from 'mongodb';
 
 dotenv.config()
 
@@ -42,9 +43,40 @@ var resolvers = {
     let jwtToken = jwt.sign({id : user._id}, process.env.JWTKEY, {expiresIn: "3 days"})
     return jwtToken    
   },
+  updateUser : async ({name, email, password},context) =>{
+    
+    let updateSetter = {};
+
+    if(name !== ''){updateSetter.name = name}
+    if(email !== ''){
+      let cursor = await users.find({email : String(email)})
+      let list = await cursor.toArray()
+      if(list.length > 0){throw Error("this email already exits")}
+      await cursor.close()
+      updateSetter.email = email
+    }
+    if(password !== ''){
+      updateSetter.password = await bcrypt.hash(String(password), 10).then((hash)=>{
+        return hash
+      })
+    }
+    
+    let updatedUser = await users.findOneAndUpdate({_id:ObjectId(context.userId)},{$set: updateSetter }).then(async(result)=>{
+      
+      if(result.lastErrorObject.updatedExisting === true){
+        return await users.findOne({_id:ObjectId(context.userId)})
+      }else{
+        throw Error("Something wrong happened, try again.")
+      }
+    })  
+    return updatedUser
+  },
   teste : async ({}, context)=>{
-    console.log(context)
-    return 'teste'
+    console.log(typeof context.userId)
+
+    let user = await users.findOne({_id:context.userId})
+    
+    return user
   }
 };
 export default resolvers

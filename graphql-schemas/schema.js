@@ -12,11 +12,13 @@ var schema = buildSchema(`
 
   type Mutation {
     createUser(name: String, email: String, password: String) : String!
+    updateUser(name: String = "", email: String = "", password: String = "") : User!
+    deleteUser : Boolean!
   }
 
   type Query {
     loginUser(email: String, password: String) : String!
-    teste: String!
+    teste: User!
   }
 `);
 
