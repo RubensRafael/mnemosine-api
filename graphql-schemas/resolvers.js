@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import connect from '../database.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { ObjectId } from 'mongodb';
 
 dotenv.config()
 
@@ -50,13 +51,47 @@ var resolvers = {
 
     return jwtToken //send token
   },
+  updateUser : async ({name, email, password},context) =>{
+    
+    let updateSetter = {};
+
+    if(name !== ''){updateSetter.name = name}
+    if(email !== ''){
+      let cursor = await users.find({email : String(email)})
+      let list = await cursor.toArray()
+      if(list.length > 0){throw Error("this email already exits")}
+      await cursor.close()
+      updateSetter.email = email
+    }
+    if(password !== ''){
+      updateSetter.password = await bcrypt.hash(String(password), 10).then((hash)=>{
+        return hash
+      })
+    }
+    
+    let updatedUser = await users.findOneAndUpdate({_id:ObjectId(context.userId)},{$set: updateSetter }).then(async(result)=>{
+      
+      if(result.lastErrorObject.updatedExisting === true){
+        return await users.findOne({_id:ObjectId(context.userId)})
+      }else{
+        throw Error("Something wrong happened, try again.")
+      }
+    })  
+    return updatedUser
+  },
+  deleteUser : async ({}, context)=>{
+    let deleted = await users.findOneAndDelete({_id:ObjectId(context.userId)},{name : 1}).then((result)=>{
+      
+      if(result.value){}else{throw Error("Something wrong happened (maybe that user is already deleted), try again.")}
+    })
+    return true
+  },
   teste : async ({}, context)=>{
-    console.log(context)
-    return 'teste'
+    console.log(typeof context.userId)
+
+    let user = await users.findOne({_id:ObjectId(context.userId)})
+    
+    return user
   }
 };
 export default resolvers
-/*jwt.verify(token, 'wrong-secret', function(err, decoded) {
-  // err 
-  // decoded undefined
-});*/
