@@ -54,7 +54,9 @@ var resolvers = {
   updateUser : async ({name, email, password},context) =>{
     
     let updateSetter = {};
-
+    // Build update object based on args.
+    // If the args exits, crate the propriety
+    // Special checks in the email and password fields is necessary
     if(name !== ''){updateSetter.name = name}
     if(email !== ''){
       let cursor = await users.find({email : String(email)})
@@ -68,7 +70,7 @@ var resolvers = {
         return hash
       })
     }
-    
+    // update user based on jwt token provided by context, with sucess, return the updated user.
     let updatedUser = await users.findOneAndUpdate({_id:ObjectId(context.userId)},{$set: updateSetter }).then(async(result)=>{
       
       if(result.lastErrorObject.updatedExisting === true){
@@ -80,6 +82,7 @@ var resolvers = {
     return updatedUser
   },
   deleteUser : async ({}, context)=>{
+    // delete user based on jwt token provided by context, with sucess, return true.
     let deleted = await users.findOneAndDelete({_id:ObjectId(context.userId)},{name : 1}).then((result)=>{
       
       if(result.value){}else{throw Error("Something wrong happened (maybe that user is already deleted), try again.")}
