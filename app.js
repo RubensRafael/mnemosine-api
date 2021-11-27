@@ -1,14 +1,18 @@
 import express from 'express';
 import { Source, parse } from 'graphql'
 import { graphqlHTTP } from 'express-graphql';
-import schema from './graphql-schemas/schema.js';
+import { makeExecutableSchema } from '@graphql-tools/schema'
+import typeDefs from './graphql-schemas/schema.js';
 import resolvers from './graphql-schemas/resolvers.js';
 import jwt from 'jsonwebtoken';
 const port = process.env.PORT || 3000
 
 
 var app = express();
-
+const executableSchema = makeExecutableSchema({
+  typeDefs,
+  resolvers
+})
 
 const loggingMiddleware = (req, res, next) => {
 
@@ -61,9 +65,8 @@ app.use(loggingMiddleware)
 
 
 app.use('/graphql', graphqlHTTP((req, res, params) =>({
-  schema: schema,
-  rootValue: resolvers,
-  context: {userId : res.locals.userId}
+  schema: executableSchema,
+  context: {userId : res.locals.userId},
   //graphiql: true,
 })));
 app.listen(port);

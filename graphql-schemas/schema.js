@@ -1,14 +1,6 @@
-import { buildSchema } from 'graphql';
-
 // Construct a schema, using GraphQL schema language
-var schema = buildSchema(`
-  type User {
-    _id : ID!
-    name : String!
-    password: String!
-    email : String!
-
-  }
+var typeDefs = `
+  
   type Note{
       title: String!
       content: String!
@@ -22,8 +14,9 @@ var schema = buildSchema(`
   type UniqueFolder{
       _id: ID!
       name: String!
-      isMain: Boolean!
+      user: ID!
       notes: [Note!]!
+      
   
   }
   
@@ -32,6 +25,16 @@ var schema = buildSchema(`
       count: Int!
       completedCount: Int!
       uncompletedDates: [String!] 
+  }
+
+  type User {
+    _id : ID!
+    name : String!
+    password: String!
+    email : String!
+    mainFolder: ID!
+    mainOrActualFolder(folderId: String = ""): UniqueFolder!
+
   }
 
   type Mutation {
@@ -44,6 +47,10 @@ var schema = buildSchema(`
     loginUser(email: String, password: String) : String!
     teste: User!
   }
-`);
+  schema{
+    query: Query
+    mutation: Mutation
+  }
+`;
 
-export default schema
+export default typeDefs
