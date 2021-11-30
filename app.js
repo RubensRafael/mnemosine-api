@@ -39,7 +39,7 @@ const loggingMiddleware = async (req, res, next) => {
       
       if(!(header[0] === "Bearer")){
         //Check the prefix
-        res.status(500).send({"errors":[{"message":"'Bearer' is required"}]})
+        return res.status(500).send({"errors":[{"message":"'Bearer' is required"}]})
       }else{
         //Try decode, if an error exits, will be send. Else, the decoded jwt is send by res object
           try {
@@ -48,22 +48,17 @@ const loggingMiddleware = async (req, res, next) => {
               let users = mongodb.collection("Users")
               return await users.findOne({_id:ObjectId(decoded.id)})
             }).catch((err)=>{
-              res.status(500).send({"errors":[err]})
+              return res.status(500).send({"errors":[err]})
             })
-            if(user === null){res.status(500).send({"errors":[{"message":"User not exits"}]})}
+            if(user === null){return res.status(500).send({"errors":[{"message":"User not exits"}]})}
             res.locals.user = user
             next()
           } catch(err) {
-              res.status(500).send({"errors":[err]})
+              return res.status(500).send({"errors":[err]})
             }
       }
       
-    }
-    
-
-    
-      
-  
+    }  
 }
 
 
