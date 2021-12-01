@@ -1,6 +1,6 @@
-import dotenv from 'dotenv';
 import connect from '../database.js';
 import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 dotenv.config()
@@ -116,7 +116,6 @@ var resolvers = {
       let folder = {
         name: String(folderName),
         user: ObjectId(ctx.userId),
-        notes : []
       }
       let result = await folders.insertOne(folder)
 
@@ -171,8 +170,9 @@ var resolvers = {
         content: String(content),
         createdAt: String(createdAt),
         expiresIn: String(expiresIn),
-        onwer : ObjectId(ctx.userId),
-        users: [ObjectId(ctx.userId)],
+        completed: false,
+        onwer : ObjectId(ctx.user._id),
+        users: [ObjectId(ctx.user._id)],
         folders : []
       }
 
@@ -181,14 +181,49 @@ var resolvers = {
         if(folder === null){throw Error("Folder not found")}
         noteModel.folders.push(ObjectId(folder._id))
       }else{
-        user = await users.findOne({_id:ObjectId(ctx.userId)}, {projection : {mainFolder : 1}})
-        noteModel.folders.push(ObjectId(user.mainFolder))
+        
+        noteModel.folders.push(ObjectId(ctx.user.mainFolder))
       }
       let result = await notes.insertOne(noteModel)
       let note = await notes.findOne({_id: result.insertedId})
       if(note === null){throw Error("Something wrong happened, try again.")}
       return note
+    },
+    updateNote : async (root, {noteId, title, content, expiresIn, fromFolder, toFolder, complete, modifiedAt}) =>{
+      //check Input
+      if(noteId === undefined || modifiedAt=== undefined){throw Error("NoteId and modifiedAt are required")}
+      if(title === undefined && content === undefined && expiresIn === undefined && fromFolder === undefined && toFolder === undefined && complete === undefined){throw Error("Nothing to update.")}
+      let note = await notes.findOne({_id:ObjectId(noteId),users: ObjectId(ctx.user._id)})
+      if(actualNote === null){throw Error("Note not found, or you don't have acess to note")}
+      
+      
+      if(title !== undefined){note
+      .title = String(title)}
+      if(content !== undefined){note.content = String(content)}
+      if(expiresIn !== undefined){note.expiresIn = String(expiresIn)}
+      if(complete !== undefined){note.complete = complete}
+      if(fromFolder !== undefined && toFolder !== undefined){
+        let origin = await folders.findOne({_id:ObjectId(fromFolder), user: ObjectId(ctx.user._id)})
+        if(origin === null){throw Error("From folder not found")}
+        let destiny = await folders.findOne({_id:ObjectId(toFolder),user: ObjectId(ctx.user._id)})
+        if(destiny === null){throw Error("To frolder not found")}
+        let originIndex = note.folders.indexOf(origin._id)
+        if(originIndex === -1){throw Error("The note doenst in the from folder")}
+        note.folders.splice(originIndex, 1, destiny._id)
+        
+      }
+      note.lastModication.when = modifiedAt
+      note.lastModication.by = ctx.user.name
+      
+      let updatedNote = await notes.findOneAndUpdate({_id: note._id},{$set:note}).then(async(result)=>{
+        if(result.value){
+          return await notes.findOne({_id: note._id})
+        }
+      })
+      return updatedNote
+      
     }
+    
   },
   User:{
     mainOrActualFolder : async (root, {folderId}, ctx, info)=>{
