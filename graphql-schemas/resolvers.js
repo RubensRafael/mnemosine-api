@@ -242,11 +242,12 @@ var resolvers = {
       let cursor = await folders.find(user: root._id)
       cursor.forEach((obj)=>{
         let unique = {
-        name : obj.name
-        id : obj._id
-        count: 0
-        completed : 0
-        dates : []
+        name : obj.name,
+        id : obj._id,
+        count: 0,
+        completed : 0,
+        dates : [],
+        isMain:false
         }
         let notesCursor = await notes.find({folders:obj._id})
         unique.count = notesCursor.count()
@@ -255,6 +256,9 @@ var resolvers = {
             unique.completed++
           }else{
             unique.dates.push(obj.expiresIn)
+          }
+          if(obj._id === root.mainFolder){
+            unique.isMain = true
           }
         })
         response.push(unique)
