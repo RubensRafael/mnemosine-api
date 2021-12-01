@@ -41,7 +41,7 @@ var resolvers = {
     },
     teste : async (root, args, ctx, info)=>{
       
-      console.log(ctx.user)
+      
       return ctx.user
     },
   },
@@ -62,6 +62,7 @@ var resolvers = {
         let user = await users.findOne({_id:result.insertedId})
         defaultFolder.user = result.insertedId
         await folders.findOneAndUpdate({_id:defaultFolder.insertedId},{$set: defaultFolder})
+        
         
         return user
       })
@@ -91,10 +92,10 @@ var resolvers = {
         })
       }
       // update user based on jwt token provided by ctx, with sucess, return the updated user.
-      let updatedUser = await users.findOneAndUpdate({_id:ObjectId(ctx.userId)},{$set: updateSetter }).then(async(result)=>{
+      let updatedUser = await users.findOneAndUpdate({_id:ObjectId(ctx.user._id)},{$set: updateSetter }).then(async(result)=>{
         
         if(result.lastErrorObject.updatedExisting === true){
-          return await users.findOne({_id:ObjectId(ctx.userId)})
+          return await users.findOne({_id:ObjectId(ctx.user._id)})
         }else{
           throw Error("Something wrong happened, try again.")
         }
@@ -118,8 +119,9 @@ var resolvers = {
         user: ObjectId(ctx.userId),
       }
       let result = await folders.insertOne(folder)
+      let response = await folders.findOne({_id:result.insertedId})
 
-      return result.insertedId
+      return response
     },
     updateFolder : async (root, {folderId, newFolderName, toMain} , ctx, info) =>{
       //Input Verification
@@ -145,9 +147,9 @@ var resolvers = {
       }
 
       if(toMain){
-        user = await users.findOne({_id:ObjectId(ctx.userId)})
-        user.mainFolder = folderId
-        updatedFolder = await users.findOneAndUpdate({_id:ObjectId(ctx.userId)},{$set:user}).then(async(result)=>{
+        user = await users.findOne({_id:ObjectId(ctx.user._id)})
+        user.mainFolder = ObjectId(folderId)
+        updatedFolder = await users.findOneAndUpdate({_id:ObjectId(ctx.user._id)},{$set:user}).then(async(result)=>{
 
           if(result.lastErrorObject.updatedExisting === true){
             return await folders.findOne({_id:ObjectId(folderId)})
@@ -160,7 +162,7 @@ var resolvers = {
 
       return updatedFolder
     },
-    createNote : async (root, {tile, content, createdAt, expiresIn ,folderId} , ctx, info) =>{
+    createNote : async (root, {title, content, createdAt, expiresIn ,folderId} , ctx, info) =>{
       //Input Verification
       if(title === undefined || content === undefined || createdAt === undefined){throw Error("Title, content and the createdAt are required!")}
 
@@ -191,14 +193,13 @@ var resolvers = {
     },
     updateNote : async (root, {noteId, title, content, expiresIn, fromFolder, toFolder, complete, modifiedAt}) =>{
       //check Input
-      if(noteId === undefined || modifiedAt=== undefined){throw Error("NoteId and modifiedAt are required")}
+      if(noteId === undefined || modifiedAt === undefined){throw Error("NoteId and modifiedAt are required")}
       if(title === undefined && content === undefined && expiresIn === undefined && fromFolder === undefined && toFolder === undefined && complete === undefined){throw Error("Nothing to update.")}
       let note = await notes.findOne({_id:ObjectId(noteId),users: ObjectId(ctx.user._id)})
       if(actualNote === null){throw Error("Note not found, or you don't have acess to note")}
       
       
-      if(title !== undefined){note
-      .title = String(title)}
+      if(title !== undefined){note.title = String(title)}
       if(content !== undefined){note.content = String(content)}
       if(expiresIn !== undefined){note.expiresIn = String(expiresIn)}
       if(complete !== undefined){note.complete = complete}
@@ -227,23 +228,24 @@ var resolvers = {
   },
   User:{
     mainOrActualFolder : async (root, {folderId}, ctx, info)=>{
+      
       let folder
       if(folderId){
         folder = await folders.findOne({_id:ObjectId(folderId)})
         if(folder === null){throw Error("Folder not found")} 
       }else{
-        folder = await folders.findOne({_id:ObjectId(ObjectId(root.mainFolder))})
+        folder = await folders.findOne({_id:root.mainFolder})
       }
       
       return folder
     },
     folderList: async (root,args,ctx,info)=>{
       let response = [];
-      let cursor = await folders.find(user: root._id)
-      cursor.forEach((obj)=>{
+      let cursor = await folders.find({user: root._id})
+      cursor.forEach(async (obj)=>{
         let unique = {
         name : obj.name,
-        id : obj._id,
+        _id : obj._id,
         count: 0,
         completed : 0,
         dates : [],
@@ -274,9 +276,9 @@ var resolvers = {
   },
   Note: {
     users: async (root,args,ctx,info)=>{
-      //logia pra pegar todos
-      let cursor  = await users.find({_id:root.users}, {projection:{name:1,email:1}})
-      return = cursor.toArray()
+      
+      let cursor  = await users.find({_id:{$in:root.users}}, {projection:{name:1,email:1}})
+      return cursor.toArray()
     }
   }
 };

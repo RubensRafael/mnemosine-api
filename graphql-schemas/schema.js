@@ -2,18 +2,19 @@
 var typeDefs = `
   
   type Modification{
-    when: String!
-    by: String!
+    when: String
+    by: String
   }
 
   type Note{
+      _id: ID!
       title: String!
       content: String!
       createdAt: String!
-      expiresIn: String!
+      expiresIn: String
       completed: Boolean!
-      onwer :User!
-      users: [User!]!
+      onwer : ID!
+      users: [LiteUser!]!
       lastModified: Modification
   
   }
@@ -28,10 +29,18 @@ var typeDefs = `
   }
   
   type liteFolder{
+      _id: ID!
       name: String!
       count: Int!
-      completedCount: Int!
-      uncompletedDates: [String!] 
+      completed: Int!
+      dates: [String!]!
+      isMain: Boolean!
+  }
+
+  type LiteUser{
+    _id: ID!
+    name: String!
+    email: String!
   }
 
   type User {
@@ -40,7 +49,8 @@ var typeDefs = `
     password: String!
     email : String!
     mainFolder: ID!
-    mainOrActualFolder(folderId: String = ""): UniqueFolder!
+    mainOrActualFolder(folderId: String): UniqueFolder!
+    folderList: [liteFolder!]!
 
   }
   
@@ -49,9 +59,10 @@ var typeDefs = `
     createUser(name: String, email: String, password: String) : String!
     updateUser(name: String = "", email: String = "", password: String = "") : User!
     deleteUser : Boolean!
-    createFolder(folderName: String) : ID!
+    createFolder(folderName: String) : UniqueFolder!
     updateFolder(folderId: String, newFolderName: String = "", toMain: Boolean = false) : UniqueFolder!
     createNote(title: String, content: String, createdAt: String, expiresIn: String = "Never" ,folderId: String = ""): Note!
+    updateNote(noteId: String, title: String, content: String, expiresIn: String, fromFolder: String, toFolder: String, complete: Boolean, modifiedAt: String): Note!
   }
 
   type Query {
