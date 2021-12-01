@@ -50,14 +50,14 @@ var resolvers = {
       //Input Verification
       if(email === undefined || password === undefined || name === undefined){throw Error("Name, email and password are required!")}
       // If the email is already registered, throw error
-      let cursor = await users.find({email : String(email)})
-      let list = await cursor.toArray()
-      if(list.length > 0){throw Error("this email already exits")}
-      await cursor.close()// Close cursor
+      let savedUser = await users.findOne({email : String(email)})
+      
+      if(savedUser !== null){throw Error("this email already exits")}
+      
 
       // Create a user with password encrypted
       let newUser = await bcrypt.hash(String(password), 10).then(async (hash)=>{        
-        let defaultFolder = await folders.insertOne({name:"My workspace", notes: []})
+        let defaultFolder = await folders.insertOne({name:"My workspace"})
         let result = await users.insertOne({name:String(name),email:String(email),password:String(hash), mainFolder: defaultFolder.insertedId })
         let user = await users.findOne({_id:result.insertedId})
         defaultFolder.user = result.insertedId
@@ -79,10 +79,10 @@ var resolvers = {
       // Special checks in the email and password fields is necessary
       if(name){updateSetter.name = name}
       if(email){
-        let cursor = await users.find({email : String(email)})
-        let list = await cursor.toArray()
-        if(list.length > 0){throw Error("this email already exits")}
-        await cursor.close()
+        let savedUser = await users.findOne({email : String(email)})
+        
+        if(savedUser !== null){throw Error("this email already exits")}
+        
         updateSetter.email = email
       }
       if(password){
@@ -237,6 +237,43 @@ var resolvers = {
       
       return folder
     },
+    folderList: async (root,args,ctx,info)=>{
+      let response = [];
+      let cursor = await folders.find(user: root._id)
+      cursor.forEach((obj)=>{
+        let unique = {
+        name : obj.name
+        id : obj._id
+        count: 0
+        completed : 0
+        dates : []
+        }
+        let notesCursor = await notes.find({folders:obj._id})
+        unique.count = notesCursor.count()
+        notesCursor.forEach((obj)=>{
+          if(obj.completed === true){
+            unique.completed++
+          }else{
+            unique.dates.push(obj.expiresIn)
+          }
+        })
+        response.push(unique)
+      })
+      return response
+    }
   },
+  UniqueFolder:{
+    notes : async (root,args,ctx,info) =>{
+      let cursor = await notes.find({folders:root._id})
+      return cursor.toArray()
+    }
+  },
+  Note: {
+    users: async (root,args,ctx,info)=>{
+      //logia pra pegar todos
+      let cursor  = await users.find({_id:root.users}, {projection:{name:1,email:1}})
+      return = cursor.toArray()
+    }
+  }
 };
 export default resolvers
