@@ -15,6 +15,18 @@ let users = db.collection("Users")
 let folders = db.collection("Folders")
 let notes = db.collection("Notes")
 
+function deleteNotes(note,user){
+        if(note === null){throw Error("Note Not Found")}
+        if(String(note.owner) === String(user._id)){
+          let deleteCheck = await notes.findOneAndDelete(note).then((result)=>{return result.value})
+          return deleteCheck ? true : false
+        }else{
+          let index = note.users.indexOf(ctx.user._id)
+          note.users.splice(index,1)
+          let updateCheck = await notes.findOneAndUpdate(note).then((result)=>{return result.value})
+          return updateCheck ? true : false
+        }
+}
 // The root provides a resolver function for each API endpoint
 var resolvers = {
   Query:{
@@ -279,7 +291,69 @@ var resolvers = {
       
       let cursor  = await users.find({_id:{$in:root.users}}, {projection:{name:1,email:1}})
       return cursor.toArray()
+    },
+    getonenote:async (root,{noteId},ctx,info)=>{
+      let note = await notes.findOne({_id:ObjectId(noteId)})
+      return note
+    },
+    detele: async (root,{level,targetId},ctx,info)=>{
+      let sucess;
+      if(level === 1){
+        
+        let note = await notes.findOne({_id: ObjectId(targetId), users: ctx.user._id})
+        
+        sucess = [deleteNotes(note,ctx.user)]
+
+      }else if(level === 2){
+        let folder = await folders.findOne({_id: targetId, user: {$ne :ctx.user._id}})
+        if(folder === null){throw Error("Folder not found.")}
+        let level1 = false;
+        let level2 = false;
+        
+        let notesCursor= await find(folders: folder._id)
+        
+        level1 = await notesCursor((obj)=>{
+          if(deleteNotes(obj,ctx.user) === false){
+            return false
+          }
+        })
+        await noteCursor.close()
+        
+        if(level1){
+          
+          level2 = await folders.findOneAndDelete(folder).then((result)=>{return result.value ? true :false})
+        }
+        
+        sucess = [level1, level2]
+          
+        }else if(level === 3){
+          let level1 = false
+          let level2 = false
+          let level3 = false
+          let notesCursor = await notes.find({users: ctx.user._id})
+          
+         level1 = await notesCursor((obj)=>{
+          if(deleteNotes(obj,ctx.user) === false){
+            return false
+          }
+        })
+        await notesCursor.close()
+        
+        if(level1){
+          level2 = await folders.deleteMany({user:ctx.user._id}).then((result)=>{return result.deletedCount > 0 ? true : false})
+        }
+        if(level2){
+          level3 = await findOneAndDelete(ctx.user).then((result)=>{return result.value
+          })
+        }
+        }
+        return [level1,level2, level3]
+        
+      }
+      
+      
     }
   }
+  
 };
 export default resolvers
