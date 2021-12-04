@@ -13,9 +13,10 @@ var typeDefs = `
       createdAt: String!
       expiresIn: String
       completed: Boolean!
-      onwer : ID!
+      owner : ID!
       users: [LiteUser!]!
-      lastModified: Modification
+      lastModification: Modification
+      folders: [String!]!
   
   }
   
@@ -63,10 +64,12 @@ var typeDefs = `
     updateFolder(folderId: String, newFolderName: String = "", toMain: Boolean = false) : UniqueFolder!
     createNote(title: String, content: String, createdAt: String, expiresIn: String = "Never" ,folderId: String = ""): Note!
     updateNote(noteId: String, title: String, content: String, expiresIn: String, fromFolder: String, toFolder: String, complete: Boolean, modifiedAt: String): Note!
+    deleteTarget(level: Int, targetId: String): [Boolean!]!
   }
 
   type Query {
     loginUser(email: String, password: String) : String!
+    getOneNote(noteId: String): Note
     teste: User!
   }
   schema{

@@ -15,6 +15,20 @@ let users = db.collection("Users")
 let folders = db.collection("Folders")
 let notes = db.collection("Notes")
 
+async function deleteNotes(note,user){
+
+        if(note === null){throw Error("Note Not Found")}
+        if(String(note.owner) === String(user._id)){
+          let deleteCheck = await notes.findOneAndDelete(note).then((result)=>{return result.value})
+          return deleteCheck ? true : false
+        }else{
+          let index = String(note.users).split(',').indexOf(String(user._id))
+          note.users.splice(index,1)
+          let updateCheck = await notes.findOneAndUpdate({_id: note._id},{$set:note}).then((result)=>{return result.value})
+          return updateCheck ? true : false
+        }
+}
+
 // The root provides a resolver function for each API endpoint
 var resolvers = {
   Query:{
@@ -38,6 +52,10 @@ var resolvers = {
       let jwtToken = jwt.sign({id : user._id}, process.env.JWTKEY, {expiresIn: "3 days"})
 
       return jwtToken //send token
+    },
+    getOneNote:async (root,{noteId},ctx,info)=>{
+      let note = await notes.findOne({_id:ObjectId(noteId)})
+      return note
     },
     teste : async (root, args, ctx, info)=>{
       
@@ -102,21 +120,13 @@ var resolvers = {
       })  
       return updatedUser
     },
-    deleteUser : async (root, args, ctx, info)=>{
-      // delete user based on jwt token provided by ctx, with sucess, return true.
-      let deleted = await users.findOneAndDelete({_id:ObjectId(ctx.user._id)},{projection: {name : 1}}).then((result)=>{
-        
-        if(result.value){}else{throw Error("Something wrong happened (maybe that user is already deleted), try again.")}
-      })
-      return true
-    },
     createFolder : async (root, {folderName} , ctx, info) =>{
       //Input Verification
       if(folderName === undefined){throw Error("Folder name is required!")}
 
       let folder = {
         name: String(folderName),
-        user: ObjectId(ctx.userId),
+        user: ObjectId(ctx.user._id),
       }
       let result = await folders.insertOne(folder)
       let response = await folders.findOne({_id:result.insertedId})
@@ -128,14 +138,16 @@ var resolvers = {
       if(folderId === undefined){throw Error("The folder Id is required!")}
       if(newFolderName === '' && toMain === false){throw Error("Nothing to update.")}
 
-      let folderModel = {}
+      let folder = await folders.findOne({_id:ObjectId(folderId)})
+      if(folder === null){throw Error("Folder Not Found.")}
+      
       let updatedFolder;
       let user;
       if(newFolderName){
 
-        folderModel.name = String(newFolderName)
+        folder.name = String(newFolderName)
 
-        updatedFolder = await folders.findOneAndUpdate({_id: ObjectId(folderId)}, {$set:folderModel}).then(async(result)=>{
+        updatedFolder = await folders.findOneAndUpdate({_id: ObjectId(folderId)}, {$set:folder}).then(async(result)=>{
 
         if(result.lastErrorObject.updatedExisting === true){
           return await folders.findOne({_id:ObjectId(folderId)})
@@ -147,20 +159,22 @@ var resolvers = {
       }
 
       if(toMain){
+
         user = await users.findOne({_id:ObjectId(ctx.user._id)})
         user.mainFolder = ObjectId(folderId)
-        updatedFolder = await users.findOneAndUpdate({_id:ObjectId(ctx.user._id)},{$set:user}).then(async(result)=>{
+        await users.findOneAndUpdate({_id:ObjectId(ctx.user._id)},{$set:user}).then(async(result)=>{
 
           if(result.lastErrorObject.updatedExisting === true){
-            return await folders.findOne({_id:ObjectId(folderId)})
+            //pass
           }else{
             throw Error("Something wrong happened, try again.")
           }
         })
+
       }
        
-
-      return updatedFolder
+      let response = updatedFolder === undefined ? folder : updatedFolder
+      return response
     },
     createNote : async (root, {title, content, createdAt, expiresIn ,folderId} , ctx, info) =>{
       //Input Verification
@@ -173,7 +187,7 @@ var resolvers = {
         createdAt: String(createdAt),
         expiresIn: String(expiresIn),
         completed: false,
-        onwer : ObjectId(ctx.user._id),
+        owner : ObjectId(ctx.user._id),
         users: [ObjectId(ctx.user._id)],
         folders : []
       }
@@ -191,30 +205,33 @@ var resolvers = {
       if(note === null){throw Error("Something wrong happened, try again.")}
       return note
     },
-    updateNote : async (root, {noteId, title, content, expiresIn, fromFolder, toFolder, complete, modifiedAt}) =>{
+    updateNote : async (root, {noteId, title, content, expiresIn, fromFolder, toFolder, complete, modifiedAt},ctx,info) =>{
       //check Input
       if(noteId === undefined || modifiedAt === undefined){throw Error("NoteId and modifiedAt are required")}
       if(title === undefined && content === undefined && expiresIn === undefined && fromFolder === undefined && toFolder === undefined && complete === undefined){throw Error("Nothing to update.")}
       let note = await notes.findOne({_id:ObjectId(noteId),users: ObjectId(ctx.user._id)})
-      if(actualNote === null){throw Error("Note not found, or you don't have acess to note")}
+      if(note === null){throw Error("Note not found, or you don't have acess to note")}
       
       
       if(title !== undefined){note.title = String(title)}
       if(content !== undefined){note.content = String(content)}
       if(expiresIn !== undefined){note.expiresIn = String(expiresIn)}
-      if(complete !== undefined){note.complete = complete}
+      if(complete !== undefined){note.completed = complete}
       if(fromFolder !== undefined && toFolder !== undefined){
         let origin = await folders.findOne({_id:ObjectId(fromFolder), user: ObjectId(ctx.user._id)})
         if(origin === null){throw Error("From folder not found")}
         let destiny = await folders.findOne({_id:ObjectId(toFolder),user: ObjectId(ctx.user._id)})
         if(destiny === null){throw Error("To frolder not found")}
-        let originIndex = note.folders.indexOf(origin._id)
+        let originIndex = String(note.folders).split(',').indexOf(String(origin._id))
+        
         if(originIndex === -1){throw Error("The note doenst in the from folder")}
         note.folders.splice(originIndex, 1, destiny._id)
         
+        
       }
-      note.lastModication.when = modifiedAt
-      note.lastModication.by = ctx.user.name
+      note.lastModification = {}
+      note.lastModification.when = modifiedAt
+      note.lastModification.by = ctx.user.name
       
       let updatedNote = await notes.findOneAndUpdate({_id: note._id},{$set:note}).then(async(result)=>{
         if(result.value){
@@ -222,8 +239,64 @@ var resolvers = {
         }
       })
       return updatedNote
-      
-    }
+    },
+    deleteTarget: async (root,{level,targetId},ctx,info)=>{
+      let response;
+      if(level === 1){
+
+        let note = await notes.findOne({_id: ObjectId(targetId), users: ctx.user._id})
+
+        return [deleteNotes(note,ctx.user)]
+
+      }else if(level === 2){
+        let folder = await folders.findOne({_id: ObjectId(targetId)})
+        if(folder === null){throw Error("Folder not found.")}
+        if(String(folder._id) === String(ctx.user.mainFolder)){throw Error("You Cannot delete your main  folder")}
+        let level1 = false;
+        let level2 = false;
+
+        let notesCursor = await notes.find({folders: folder._id})
+
+        let notesArray = await notesCursor.toArray()
+        await notesCursor.close()
+        level1 = notesArray.map((obj)=>{
+            return deleteNotes(obj,ctx.user)
+        })
+        
+
+        if(!(level1.includes(false))){
+          level1 = true
+          level2 = await folders.findOneAndDelete(folder).then((result)=>{return result.value ? true :false})
+        }
+
+        return [level1, level2]
+
+        }else if(level === 3){
+          let level1 = false
+          let level2 = false
+          let level3 = false
+          let notesCursor = await notes.find({users: ctx.user._id})
+
+          let notesArray = await notesCursor.toArray()
+          await notesCursor.close()
+          level1 = notesArray.map((obj)=>{
+            return deleteNotes(obj,ctx.user)
+          })
+
+          
+
+          if(!(level1.includes(false))){
+            level1 = true
+            level2 = await folders.deleteMany({user:ctx.user._id}).then((result)=>{return result.deletedCount > 0 ? true : false})
+          }
+          if(level2){
+            level3 = await users.findOneAndDelete(ctx.user).then((result)=>{return result.value ? true : false})
+          }
+
+          return [level1, level2, level3]
+        }
+        
+      }
     
   },
   User:{
@@ -240,9 +313,10 @@ var resolvers = {
       return folder
     },
     folderList: async (root,args,ctx,info)=>{
-      let response = [];
       let cursor = await folders.find({user: root._id})
-      cursor.forEach(async (obj)=>{
+      let allfolders = await cursor.toArray()
+      await cursor.close()
+      let response = await allfolders.map(async (obj)=>{
         let unique = {
         name : obj.name,
         _id : obj._id,
@@ -251,20 +325,30 @@ var resolvers = {
         dates : [],
         isMain:false
         }
+       
+        if(String(obj._id) === String(root.mainFolder)){
+            unique.isMain = true
+        }
+
         let notesCursor = await notes.find({folders:obj._id})
-        unique.count = notesCursor.count()
-        notesCursor.forEach((obj)=>{
+        
+        
+       await notesCursor.forEach(async (obj)=>{
+
+          unique.count++
+          
           if(obj.completed === true){
             unique.completed++
           }else{
             unique.dates.push(obj.expiresIn)
           }
-          if(obj._id === root.mainFolder){
-            unique.isMain = true
-          }
+
         })
-        response.push(unique)
+       await cursor.close()
+      return unique   
+
       })
+      
       return response
     }
   },
