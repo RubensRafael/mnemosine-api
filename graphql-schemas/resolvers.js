@@ -17,7 +17,7 @@ let notes = db.collection("Notes")
 
 async function deleteNotes(note,user){
 
-        if(note === null){throw Error("Note Not Found")}
+        if(note === null){throw Error("Note Not Found.")}
         if(String(note.owner) === String(user._id)){
           let deleteCheck = await notes.findOneAndDelete(note).then((result)=>{return result.value})
           return deleteCheck ? true : false
@@ -35,18 +35,18 @@ var resolvers = {
       
     loginUser : async (root,{email, password},ctx,info) =>{
       //Input Verification
-      if(email === undefined || password === undefined){throw Error("Email and password are required!")}
+      if(email === undefined || password === undefined){throw Error("'email' and 'password' are required!")}
 
       // get user by email
       let user = await users.findOne({email : String(email)}, {projection: {_id : 1, password : 1}})
       
 
       // if user not found
-      if(user === null){throw Error("The email or the password is wrong.")}
+      if(user === null){throw Error("The 'email' or the 'password' is wrong.")}
 
       //Compare password encrypted
       await bcrypt.compare(password, user.password).then((result)=>{
-        if(result === false){throw Error("The email or the password is wrong.")}
+        if(result === false){throw Error("The 'email' or the 'password' is wrong.")}
       })
       // Create a jwt token, with the user Id
       let jwtToken = jwt.sign({id : user._id}, process.env.JWTKEY, {expiresIn: "3 days"})
@@ -66,11 +66,11 @@ var resolvers = {
   Mutation:{
     createUser: async (root,{name, email, password},ctx,info) => {
       //Input Verification
-      if(email === undefined || password === undefined || name === undefined){throw Error("Name, email and password are required!")}
+      if(email === undefined || password === undefined || name === undefined){throw Error("'name', 'email' and 'password' are required!")}
       // If the email is already registered, throw error
       let savedUser = await users.findOne({email : String(email)})
       
-      if(savedUser !== null){throw Error("this email already exits")}
+      if(savedUser !== null){throw Error("This email already exits.")}
       
 
       // Create a user with password encrypted
@@ -100,7 +100,7 @@ var resolvers = {
       if(email){
         let savedUser = await users.findOne({email : String(email)})
         
-        if(savedUser !== null){throw Error("this email already exits")}
+        if(savedUser !== null){throw Error("This email already exits.")}
         
         updateSetter.email = email
       }
@@ -110,10 +110,10 @@ var resolvers = {
         })
       }
       // update user based on jwt token provided by ctx, with sucess, return the updated user.
-      let updatedUser = await users.findOneAndUpdate({_id:ObjectId(ctx.user._id)},{$set: updateSetter }).then(async(result)=>{
+      let updatedUser = await users.findOneAndUpdate({_id:ctx.user._id},{$set: updateSetter }).then(async(result)=>{
         
         if(result.lastErrorObject.updatedExisting === true){
-          return await users.findOne({_id:ObjectId(ctx.user._id)})
+          return await users.findOne({_id:ctx.user._id})
         }else{
           throw Error("Something wrong happened, try again.")
         }
@@ -122,7 +122,7 @@ var resolvers = {
     },
     createFolder : async (root, {folderName} , ctx, info) =>{
       //Input Verification
-      if(folderName === undefined){throw Error("Folder name is required!")}
+      if(folderName === undefined){throw Error("'folderName' is required!")}
 
       let folder = {
         name: String(folderName),
@@ -135,10 +135,10 @@ var resolvers = {
     },
     updateFolder : async (root, {folderId, newFolderName, toMain} , ctx, info) =>{
       //Input Verification
-      if(folderId === undefined){throw Error("The folder Id is required!")}
+      if(folderId === undefined){throw Error("'folderId' is required!")}
       if(newFolderName === '' && toMain === false){throw Error("Nothing to update.")}
 
-      let folder = await folders.findOne({_id:ObjectId(folderId)})
+      let folder = await folders.findOne({_id:ObjectId(folderId),{user: ctx.user._id}})
       if(folder === null){throw Error("Folder Not Found.")}
       
       let updatedFolder;
@@ -160,9 +160,9 @@ var resolvers = {
 
       if(toMain){
 
-        user = await users.findOne({_id:ObjectId(ctx.user._id)})
+        user = await users.findOne({_id:ctx.user._id})
         user.mainFolder = ObjectId(folderId)
-        await users.findOneAndUpdate({_id:ObjectId(ctx.user._id)},{$set:user}).then(async(result)=>{
+        await users.findOneAndUpdate({_id:ctx.user._id},{$set:user}).then(async(result)=>{
 
           if(result.lastErrorObject.updatedExisting === true){
             //pass
@@ -178,7 +178,7 @@ var resolvers = {
     },
     createNote : async (root, {title, content, createdAt, expiresIn ,folderId} , ctx, info) =>{
       //Input Verification
-      if(title === undefined || content === undefined || createdAt === undefined){throw Error("Title, content and the createdAt are required!")}
+      if(title === undefined || content === undefined || createdAt === undefined){throw Error("'title', 'content' and 'createdAt' are required!")}
 
       let folder
       let noteModel = {
@@ -194,7 +194,7 @@ var resolvers = {
 
       if(folderId){
         folder = await folders.findOne({_id:ObjectId(folderId)})
-        if(folder === null){throw Error("Folder not found")}
+        if(folder === null){throw Error("Folder not found.")}
         noteModel.folders.push(ObjectId(folder._id))
       }else{
         
@@ -207,10 +207,10 @@ var resolvers = {
     },
     updateNote : async (root, {noteId, title, content, expiresIn, fromFolder, toFolder, complete, modifiedAt},ctx,info) =>{
       //check Input
-      if(noteId === undefined || modifiedAt === undefined){throw Error("NoteId and modifiedAt are required")}
+      if(noteId === undefined || modifiedAt === undefined){throw Error("'noteId' and 'modifiedAt' are required.")}
       if(title === undefined && content === undefined && expiresIn === undefined && fromFolder === undefined && toFolder === undefined && complete === undefined){throw Error("Nothing to update.")}
-      let note = await notes.findOne({_id:ObjectId(noteId),users: ObjectId(ctx.user._id)})
-      if(note === null){throw Error("Note not found, or you don't have acess to note")}
+      let note = await notes.findOne({_id:ObjectId(noteId),users: ctx.user._id})
+      if(note === null){throw Error("Note not found, or you don't have acess to note.")}
       
       
       if(title !== undefined){note.title = String(title)}
@@ -218,13 +218,13 @@ var resolvers = {
       if(expiresIn !== undefined){note.expiresIn = String(expiresIn)}
       if(complete !== undefined){note.completed = complete}
       if(fromFolder !== undefined && toFolder !== undefined){
-        let origin = await folders.findOne({_id:ObjectId(fromFolder), user: ObjectId(ctx.user._id)})
-        if(origin === null){throw Error("From folder not found")}
-        let destiny = await folders.findOne({_id:ObjectId(toFolder),user: ObjectId(ctx.user._id)})
-        if(destiny === null){throw Error("To frolder not found")}
+        let origin = await folders.findOne({_id:ObjectId(fromFolder), user: ctx.user._id})
+        if(origin === null){throw Error("'fromFolder' not found.")}
+        let destiny = await folders.findOne({_id:ObjectId(toFolder),user: ctx.user._id})
+        if(destiny === null){throw Error("'toFolder' not found")}
         let originIndex = String(note.folders).split(',').indexOf(String(origin._id))
         
-        if(originIndex === -1){throw Error("The note doenst in the from folder")}
+        if(originIndex === -1){throw Error("The note don't is present on this folder.")}
         note.folders.splice(originIndex, 1, destiny._id)
         
         
@@ -249,9 +249,9 @@ var resolvers = {
         return [deleteNotes(note,ctx.user)]
 
       }else if(level === 2){
-        let folder = await folders.findOne({_id: ObjectId(targetId)})
+        let folder = await folders.findOne({_id: ObjectId(targetId), user: ctx.user._id})
         if(folder === null){throw Error("Folder not found.")}
-        if(String(folder._id) === String(ctx.user.mainFolder)){throw Error("You Cannot delete your main  folder")}
+        if(String(folder._id) === String(ctx.user.mainFolder)){throw Error("You can't delete your main folder.")}
         let level1 = false;
         let level2 = false;
 
@@ -304,8 +304,8 @@ var resolvers = {
       
       let folder
       if(folderId){
-        folder = await folders.findOne({_id:ObjectId(folderId)})
-        if(folder === null){throw Error("Folder not found")} 
+        folder = await folders.findOne({_id:ObjectId(folderId),user: ctx.user._id})
+        if(folder === null){throw Error("Folder not found.")} 
       }else{
         folder = await folders.findOne({_id:root.mainFolder})
       }
@@ -354,7 +354,7 @@ var resolvers = {
   },
   UniqueFolder:{
     notes : async (root,args,ctx,info) =>{
-      let cursor = await notes.find({folders:root._id})
+      let cursor = await notes.find({folders:root._id, users: ctx.user._id})
       return cursor.toArray()
     }
   },
