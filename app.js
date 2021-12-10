@@ -76,9 +76,6 @@ app.use(loggingMiddleware)
 app.use('/graphql', graphqlHTTP((req, res, params) =>({
   schema: executableSchema,
   context: {user : res.locals.user},
-  graphiql: {
-    headerEditorEnabled: true
-  },
 })));
 
 const server = app.listen(port, () => {
