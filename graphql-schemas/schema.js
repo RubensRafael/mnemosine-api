@@ -54,6 +54,14 @@ var typeDefs = `
     folderList: [liteFolder!]!
 
   }
+
+  type Invite{
+    _id: ID!
+    from: ID!
+    to: ID!
+    note: ID!
+    response: Boolean
+  }
   
 
   type Mutation {
@@ -65,16 +73,25 @@ var typeDefs = `
     createNote(title: String, content: String, createdAt: String, expiresIn: String = "Never" ,folderId: String = ""): Note!
     updateNote(noteId: String, title: String, content: String, expiresIn: String, fromFolder: String, toFolder: String, complete: Boolean, modifiedAt: String): Note!
     deleteTarget(level: Int, targetId: String): [Boolean!]!
+    createInvite(noteId: String, to: String): [Int!]!
+    responseInvite(inviteId: String, response: Boolean): Boolean!
   }
 
   type Query {
     loginUser(email: String, password: String) : String!
     getOneNote(noteId: String): Note
-    teste: User!
+    getUser: User!
   }
+
+  type Subscription{
+    newInvite : Invite!
+    answeredInvite : Invite!
+  }
+
   schema{
     query: Query
     mutation: Mutation
+    subscription: Subscription
   }
 `;
 

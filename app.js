@@ -1,5 +1,5 @@
 import express from 'express';
-import { Source, parse } from 'graphql'
+import { Source, parse, execute, subscribe } from 'graphql'
 import { graphqlHTTP } from 'express-graphql';
 import { makeExecutableSchema } from '@graphql-tools/schema'
 import typeDefs from './graphql-schemas/schema.js';
@@ -7,6 +7,8 @@ import resolvers from './graphql-schemas/resolvers.js';
 import connect from './database.js';
 import { ObjectId } from 'mongodb';
 import jwt from 'jsonwebtoken';
+import {WebSocketServer} from 'ws';
+import { useServer } from 'graphql-ws/lib/use/ws';
 const port = process.env.PORT || 3000
 
 
@@ -17,6 +19,7 @@ const executableSchema = makeExecutableSchema({
 })
 
 const loggingMiddleware = async (req, res, next) => {
+  try{
     res.header("Content-Type",'application/json');
 
     let src = new Source(String(req.body.query))// Get the query string
@@ -58,7 +61,10 @@ const loggingMiddleware = async (req, res, next) => {
             }
       }
       
-    }  
+    }
+  }catch(e){
+    console.log(e)
+  }
 }
 
 
@@ -70,7 +76,17 @@ app.use(loggingMiddleware)
 app.use('/graphql', graphqlHTTP((req, res, params) =>({
   schema: executableSchema,
   context: {user : res.locals.user},
-  //graphiql: true,
+  graphiql: {
+    headerEditorEnabled: true
+  },
 })));
-app.listen(port);
-console.log('Running a GraphQL API server at http://localhost:' + port +'/graphql');
+
+const server = app.listen(port, () => {
+    const wsServer = new WebSocketServer({
+    server,
+    path: '/graphql',
+  });
+    useServer({ executableSchema }, wsServer);
+
+});
+console.log(`Running a GraphQL API server at http://localhost:${port}/graphql`);
