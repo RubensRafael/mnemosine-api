@@ -21,7 +21,7 @@ const executableSchema = makeExecutableSchema({
 const loggingMiddleware = async (req, res, next) => {
   
     res.header("Content-Type",'application/json');
-
+    req.method !== 'POST' ? next() : ''
     let src = new Source(String(req.body.query))// Get the query string
 
     //Parse the string and separe on parts that will be verificated
