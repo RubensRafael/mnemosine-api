@@ -19,13 +19,18 @@ const executableSchema = makeExecutableSchema({
 })
 
 const loggingMiddleware = async (req, res, next) => {
-  try{
+  
     res.header("Content-Type",'application/json');
 
     let src = new Source(String(req.body.query))// Get the query string
 
     //Parse the string and separe on parts that will be verificated
-    let parsed = parse(src)
+    try{
+      let parsed = parse(src)
+    }catch(e){
+      next()
+    }
+    
     let definitionsLength = parsed.definitions.length
     let operation = parsed.definitions[0].operation
     let operationLength = parsed.definitions[0].selectionSet.selections.length
@@ -39,6 +44,7 @@ const loggingMiddleware = async (req, res, next) => {
     }else{
       //Get jwt token string
       let header = req.headers.authorization.split(' ')
+
       
       if(!(header[0] === "Bearer")){
         //Check the prefix
@@ -62,9 +68,7 @@ const loggingMiddleware = async (req, res, next) => {
       }
       
     }
-  }catch(e){
-    console.log(e)
-  }
+  
 }
 
 
