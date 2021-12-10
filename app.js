@@ -27,14 +27,16 @@ const loggingMiddleware = async (req, res, next) => {
     //Parse the string and separe on parts that will be verificated
     try{
       let parsed = parse(src)
+      let definitionsLength = parsed.definitions.length
+      let operation = parsed.definitions[0].operation
+      let operationLength = parsed.definitions[0].selectionSet.selections.length
+      let operationName = parsed.definitions[0].selectionSet.selections[0].name.value
     }catch(e){
+      console.log(e)
       next()
     }
     
-    let definitionsLength = parsed.definitions.length
-    let operation = parsed.definitions[0].operation
-    let operationLength = parsed.definitions[0].selectionSet.selections.length
-    let operationName = parsed.definitions[0].selectionSet.selections[0].name.value
+   
 
     // If the query is ONLY 'loginUser' OR ONLY 'createUser', the request pass without jwt verification
     if((operation === 'query') && (operationLength === 1) && (operationName === 'loginUser') && (definitionsLength === 1)){
