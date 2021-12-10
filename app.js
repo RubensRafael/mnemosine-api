@@ -37,7 +37,7 @@ const loggingMiddleware = async (req, res, next) => {
     }else if((operation === 'mutation') && (operationLength === 1) && (operationName === 'createUser') && (definitionsLength === 1)){
       next();
 
-    }catch(e){
+    }}catch(e){
       console.log(e)
       next()
     }
