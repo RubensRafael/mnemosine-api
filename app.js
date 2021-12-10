@@ -37,16 +37,10 @@ const loggingMiddleware = async (req, res, next) => {
     }else if((operation === 'mutation') && (operationLength === 1) && (operationName === 'createUser') && (definitionsLength === 1)){
       next();
 
-    }}catch(e){
-      console.log(e)
-      next()
-    }
-    
-   
-
-   
-    
-      //Get jwt token string
+    }else{
+ 
+//Get jwt token string
+      
       let header = req.headers.authorization.split(' ')
 
       
@@ -70,6 +64,16 @@ const loggingMiddleware = async (req, res, next) => {
               return res.status(500).send({"errors":[err]})
             }
       }
+} }catch(e){
+      console.log(e)
+      next()
+    }
+    
+   
+
+   
+    
+      
       
     
   
