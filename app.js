@@ -82,7 +82,7 @@ const loggingMiddleware = async (req, res, next) => {
 
 
 app.use(express.json())
-app.use(loggingMiddleware)
+//app.use(loggingMiddleware)
 
 
 app.use('/graphql', graphqlHTTP((req, res, params) =>({
