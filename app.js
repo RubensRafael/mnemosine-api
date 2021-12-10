@@ -31,6 +31,12 @@ const loggingMiddleware = async (req, res, next) => {
       let operation = parsed.definitions[0].operation
       let operationLength = parsed.definitions[0].selectionSet.selections.length
       let operationName = parsed.definitions[0].selectionSet.selections[0].name.value
+       // If the query is ONLY 'loginUser' OR ONLY 'createUser', the request pass without jwt verification
+    if((operation === 'query') && (operationLength === 1) && (operationName === 'loginUser') && (definitionsLength === 1)){
+      next();
+    }else if((operation === 'mutation') && (operationLength === 1) && (operationName === 'createUser') && (definitionsLength === 1)){
+      next();
+
     }catch(e){
       console.log(e)
       next()
@@ -38,12 +44,8 @@ const loggingMiddleware = async (req, res, next) => {
     
    
 
-    // If the query is ONLY 'loginUser' OR ONLY 'createUser', the request pass without jwt verification
-    if((operation === 'query') && (operationLength === 1) && (operationName === 'loginUser') && (definitionsLength === 1)){
-      next();
-    }else if((operation === 'mutation') && (operationLength === 1) && (operationName === 'createUser') && (definitionsLength === 1)){
-      next();
-    }else{
+   
+    
       //Get jwt token string
       let header = req.headers.authorization.split(' ')
 
@@ -69,7 +71,7 @@ const loggingMiddleware = async (req, res, next) => {
             }
       }
       
-    }
+    
   
 }
 
