@@ -19,7 +19,7 @@ const executableSchema = makeExecutableSchema({
 })
        
 const loggingMiddleware = async (req, res, next) => {
-    console.log("kdkdlskdkdkd"
+    console.log("kdkdlskdkdkd")
     res.header("Content-Type",'application/json');
 
     let src = new Source(String(req.body.query))// Get the query string
