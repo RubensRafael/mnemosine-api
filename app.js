@@ -37,7 +37,7 @@ const loggingMiddleware = async (req, res, next) => {
       next();
     }else{
       //Get jwt token string
-      if(res.stareq.headers.authorization === undefined){
+      if(res.req.headers.authorization === undefined){
           return res.status(500).send({"errors":[{"message":"Auth header is required."}]})
       }
       let header = req.headers.authorization.split(' ')
