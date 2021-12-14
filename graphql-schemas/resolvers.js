@@ -315,7 +315,8 @@ var resolvers = {
 
         if(invite !== null){
           sucess++
-          pubsub.publish("NEW_INVITE",invite)
+          pubsub.publish(String(guest._id),{newInvite: invite})
+
         }
       }
       
@@ -332,8 +333,11 @@ var resolvers = {
     answeredInvite: async (root,{level,targetId},ctx,info)=>{
       return 'a'
     },
-    newInvite: {
-            subscribe: (parent, args, context) => pubsub.asyncIterator("NEW_INVITE")
+    newInvite:{
+           
+            //console.log({root,args,ctx,info})
+           subscribe:(root,args,ctx,info)=>{ return pubsub.asyncIterator(String(ctx.user._id))}
+          
         }
   },
   User:{

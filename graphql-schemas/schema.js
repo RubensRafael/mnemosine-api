@@ -56,10 +56,10 @@ var typeDefs = `
   }
 
   type Invite{
-    _id: ID!
-    from: ID!
-    to: ID!
-    note: ID!
+    _id: ID
+    from: ID
+    to: ID
+    note: ID
     response: Boolean
   }
   
