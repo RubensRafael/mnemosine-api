@@ -17,32 +17,30 @@ const executableSchema = makeExecutableSchema({
   typeDefs,
   resolvers
 })
-
+       
 const loggingMiddleware = async (req, res, next) => {
-  
     res.header("Content-Type",'application/json');
-    req.method !== 'POST' ? next() : ''
+
     let src = new Source(String(req.body.query))// Get the query string
 
     //Parse the string and separe on parts that will be verificated
-    try{
-      let parsed = parse(src)
-      let definitionsLength = parsed.definitions.length
-      let operation = parsed.definitions[0].operation
-      let operationLength = parsed.definitions[0].selectionSet.selections.length
-      let operationName = parsed.definitions[0].selectionSet.selections[0].name.value
-       // If the query is ONLY 'loginUser' OR ONLY 'createUser', the request pass without jwt verification
+    let parsed = parse(src)
+    let definitionsLength = parsed.definitions.length
+    let operation = parsed.definitions[0].operation
+    let operationLength = parsed.definitions[0].selectionSet.selections.length
+    let operationName = parsed.definitions[0].selectionSet.selections[0].name.value
+
+    // If the query is ONLY 'loginUser' OR ONLY 'createUser', the request pass without jwt verification
     if((operation === 'query') && (operationLength === 1) && (operationName === 'loginUser') && (definitionsLength === 1)){
       next();
     }else if((operation === 'mutation') && (operationLength === 1) && (operationName === 'createUser') && (definitionsLength === 1)){
       next();
-
     }else{
- 
-//Get jwt token string
-      
+      //Get jwt token string
+      if(res.stareq.headers.authorization === undefined){
+          return res.status(500).send({"errors":[{"message":"Auth header is required."}]})
+      }
       let header = req.headers.authorization.split(' ')
-
       
       if(!(header[0] === "Bearer")){
         //Check the prefix
@@ -64,30 +62,19 @@ const loggingMiddleware = async (req, res, next) => {
               return res.status(500).send({"errors":[err]})
             }
       }
-} }catch(e){
-      console.log(e)
-      next()
-    }
-    
-   
-
-   
-    
       
-      
-    
-  
+    }  
 }
 
 
-
 app.use(express.json())
-//app.use(loggingMiddleware)
+app.post(loggingMiddleware)
 
 
 app.use('/graphql', graphqlHTTP((req, res, params) =>({
   schema: executableSchema,
   context: {user : res.locals.user},
+  graphiql : true
 })));
 
 const server = app.listen(port, () => {
