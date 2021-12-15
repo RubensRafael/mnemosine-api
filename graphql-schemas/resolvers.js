@@ -332,8 +332,18 @@ var resolvers = {
       if(response){
           invite.response = response
           note.users.push(invite.to)
+          await notes.findOneAndUpdate({_id:note._id},{$set:note})
+      }else{
+          invite.response = response      
       }
-      return 'a'
+      
+      await invitations.findOneAndUpdate({_id:invite._id},{$set: invite}).then((result)=>{
+           if(result.value){
+               let sendInvite = await invitations.findOne({_id:invite._id})
+                pubsub.publish(String(ctx.user._id),{answeredInvite: sendInvite})
+           }
+      })
+      return true
 
     }
   },
