@@ -1,0 +1,137 @@
+
+
+mutation update{
+  updateUser(name: "novoNome", password: "novasenha", email: "novoemail5"){
+    name,
+    password,
+    _id,
+    mainOrActualFolder{
+      name
+    }
+  }
+}
+
+
+
+mutation createFolder{
+  createFolder(folderName: "Meu novo folder 3"){
+    _id,
+    name,
+    user
+  }
+}
+
+mutation updateFolder{
+  updateFolder(folderId: "61a93eee74787df839800832", newFolderName: "Alou zap 3", toMain: true){
+    _id,
+    name,
+    user
+    
+  }
+}
+
+mutation createNote{
+  createNote(title: "Strtgaaa", content: "String", createdAt: "14/078/2001", expiresIn: "01/1a2/2021"){
+   _id,
+  title,
+  content,
+  createdAt,
+  expiresIn,
+  completed,
+  owner,
+  users{
+    name,
+    _id,
+    email
+  },
+  lastModification{
+    when,
+    by
+  },
+   folders
+  }
+}
+
+mutation updateNote{
+  updateNote(noteId: "61abadd99f3b779061857c71",title: "teste", content: "superteste teste demais", modifiedAt: "04/12/2001", expiresIn: "05/12/2021",complete: true, toFolder:"61a939e3c3c895fadda5f254" , fromFolder: "61a93eee74787df839800832"){
+    _id,
+  title,
+  content,
+  createdAt,
+  expiresIn,
+  completed,
+  owner,
+  users{
+    name,
+    _id,
+    email
+  }
+  lastModification{
+    when,
+    by
+  }
+    
+  }
+}
+
+query getUser{
+  getUser{
+    mainFolder,
+    email,
+    _id,
+    name,
+    mainOrActualFolder{
+      name,
+      _id,
+      user,
+      notes{
+        owner
+        title,
+        _id,
+        folders,
+        users{
+          _id
+        }
+      }
+    }
+    folderList{
+  _id,
+  name,
+  count,
+  completed,
+  dates,
+  isMain,
+    }
+  
+} 
+}
+query noteone{
+  getOneNote(noteId: "61abadd99f3b779061857c71"){
+    title
+    content
+  }
+}
+
+mutation delete{
+  deleteTarget(level: 3)
+}
+
+subscription a {
+  newInvite{
+    _id
+  }
+}
+
+mutation b{
+  createInvite(noteId: "61b3bbbe956d3dde6814df0a", to: "email5")
+}
+
+mutation create{
+  createUser(name: "Tes5User" password: "senha", email:"email6")
+}
+query{
+  loginUser(password: "senha", email:"email1")
+}
+UM = {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxYjhkYTkyNTQ5NzczNjFlNGFkNDBkOSIsImlhdCI6MTYzOTUwNDUzMiwiZXhwIjoxNjM5NzYzNzMyfQ.JsnGiAi9Yt3_2Rl4QExnZTVBdTR_Iyl84zqruFOCGaM"}
+
+DOIS = {"Authorization" : "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxYjhkYmZjNjYyNGY3N2I2NTJiOTk1MCIsImlhdCI6MTYzOTUwNDg5MywiZXhwIjoxNjM5NzY0MDkzfQ.3YdekCKzwxi0KgbXWlzm-joK9K3xd2s6BeJpvYbmz8k"}
