@@ -310,7 +310,7 @@ var resolvers = {
           fail++
           continue
         }
-        let result = await invitations.insertOne({from: ctx.user._id, to: guest._id, note: note._id})
+        let result = await invitations.insertOne({from: ctx.user._id, to: guest._id, note: note._id,response:null})
         let invite = await invitations.findOne({_id: result.insertedId})
 
         if(invite !== null){
@@ -323,19 +323,28 @@ var resolvers = {
       return [sucess, fail]
 
     },
-    responseInvite: async (root,{level,targetId},ctx,info)=>{
+    responseInvite: async (root,{inviteId,response},ctx,info)=>{
+      let invite = await invitations.findOne({_id:inviteId})
+      if(invite === null){throw Error("invite not found")}
+      if(String(invite.to) !== String(ctx.user._id)){throw Error("This invite not was made to you.")}
+      let note = await notes.findOne({_id:invite.note})
+      
+      if(response){
+          invite.response = response
+          note.users.push(invite.to)
+      }
       return 'a'
 
     }
   },
   Subscription:{
    
-    answeredInvite: async (root,{level,targetId},ctx,info)=>{
-      return 'a'
+    answeredInvite: {
+        subscribe:(root,args,ctx,info)=>{ return pubsub.asyncIterator(String(ctx.user._id))}
     },
     newInvite:{
            
-            //console.log({root,args,ctx,info})
+            
            subscribe:(root,args,ctx,info)=>{ return pubsub.asyncIterator(String(ctx.user._id))}
           
         }
