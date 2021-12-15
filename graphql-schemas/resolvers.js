@@ -3,9 +3,10 @@ import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
+import  { PubSub } from 'graphql-subscriptions';
 dotenv.config()
 
-
+let pubsub = new PubSub()
 
 let db = await connect().then((mongodb)=>{
   return mongodb
@@ -14,6 +15,7 @@ let db = await connect().then((mongodb)=>{
 let users = db.collection("Users")
 let folders = db.collection("Folders")
 let notes = db.collection("Notes")
+let invitations = db.collection("Invitations")
 
 async function deleteNotes(note,user){
 
@@ -57,11 +59,10 @@ var resolvers = {
       let note = await notes.findOne({_id:ObjectId(noteId)})
       return note
     },
-    teste : async (root, args, ctx, info)=>{
-      
-      
+    getUser : async (root, args, ctx, info)=>{
       return ctx.user
     },
+
   },
   Mutation:{
     createUser: async (root,{name, email, password},ctx,info) => {
@@ -138,7 +139,7 @@ var resolvers = {
       if(folderId === undefined){throw Error("'folderId' is required!")}
       if(newFolderName === '' && toMain === false){throw Error("Nothing to update.")}
 
-      let folder = await folders.findOne({_id:ObjectId(folderId),{user: ctx.user._id}})
+      let folder = await folders.findOne({_id:ObjectId(folderId),user: ctx.user._id})
       if(folder === null){throw Error("Folder Not Found.")}
       
       let updatedFolder;
@@ -295,9 +296,68 @@ var resolvers = {
 
           return [level1, level2, level3]
         }
-        
+    },
+    createInvite: async (root,{noteId, to},ctx,info)=>{
+      if(noteId === undefined, to === undefined){throw Error("'noteId' and 'to' are required.")}
+      let note = await notes.findOne({_id:ObjectId(noteId),users: ctx.user._id})
+      if(note === null){throw Error("Note not found, or you don't have acess to note.")}
+      let sucess = 0;
+      let fail = 0;
+
+      for(let guestEmail of to.split(' ')){
+        let guest = await users.findOne({email:guestEmail})
+        if(guest === null){
+          fail++
+          continue
+        }
+        let result = await invitations.insertOne({from: ctx.user._id, to: guest._id, note: note._id,response:null})
+        let invite = await invitations.findOne({_id: result.insertedId})
+
+        if(invite !== null){
+          sucess++
+          pubsub.publish(String(guest._id),{newInvite: invite})
+
+        }
       }
-    
+      
+      return [sucess, fail]
+
+    },
+    responseInvite: async (root,{inviteId,response},ctx,info)=>{
+      let invite = await invitations.findOne({_id:inviteId})
+      if(invite === null){throw Error("invite not found")}
+      if(String(invite.to) !== String(ctx.user._id)){throw Error("This invite not was made to you.")}
+      let note = await notes.findOne({_id:invite.note})
+      
+      if(response){
+          invite.response = response
+          note.users.push(invite.to)
+          await notes.findOneAndUpdate({_id:note._id},{$set:note})
+      }else{
+          invite.response = response      
+      }
+      
+      await invitations.findOneAndUpdate({_id:invite._id},{$set: invite}).then((result)=>{
+           if(result.value){
+               let sendInvite = await invitations.findOne({_id:invite._id})
+                pubsub.publish(String(ctx.user._id),{answeredInvite: sendInvite})
+           }
+      })
+      return true
+
+    }
+  },
+  Subscription:{
+   
+    answeredInvite: {
+        subscribe:(root,args,ctx,info)=>{ return pubsub.asyncIterator(String(ctx.user._id))}
+    },
+    newInvite:{
+           
+            
+           subscribe:(root,args,ctx,info)=>{ return pubsub.asyncIterator(String(ctx.user._id))}
+          
+        }
   },
   User:{
     mainOrActualFolder : async (root, {folderId}, ctx, info)=>{
