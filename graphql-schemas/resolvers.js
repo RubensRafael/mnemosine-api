@@ -42,8 +42,7 @@ var resolvers = {
       // get user by email
       let user = await users.findOne({email : String(email)}, {projection: {_id : 1, password : 1}})
       
-
-      // if user not found
+      // if user not foun
       if(user === null){throw Error("The 'email' or the 'password' is wrong.")}
 
       //Compare password encrypted
@@ -51,8 +50,7 @@ var resolvers = {
         if(result === false){throw Error("The 'email' or the 'password' is wrong.")}
       })
       // Create a jwt token, with the user Id
-      let jwtToken = jwt.sign({id : user._id}, process.env.JWTKEY, {expiresIn: "3 days"})
-
+      let jwtToken = jwt.sign({id : user._id}, process.env.JWTKEY, {expiresIn: "3 days"}
       return jwtToken //send token
     },
     getOneNote:async (root,{noteId},ctx,info)=>{
@@ -60,8 +58,8 @@ var resolvers = {
       return note
     },
     getUser : async (root, args, ctx, info)=>{
-      return ctx.user
-    },
+      return ctx.use
+    
 
   },
   Mutation:{
@@ -69,8 +67,8 @@ var resolvers = {
       //Input Verification
       if(email === undefined || password === undefined || name === undefined){throw Error("'name', 'email' and 'password' are required!")}
       // If the email is already registered, throw error
-      let savedUser = await users.findOne({email : String(email)})
-      
+      let savedUser = await users.findOne({email : String(email)}
+    
       if(savedUser !== null){throw Error("This email already exits.")}
       
 
@@ -78,8 +76,8 @@ var resolvers = {
       let newUser = await bcrypt.hash(String(password), 10).then(async (hash)=>{        
         let defaultFolder = await folders.insertOne({name:"My workspace"})
         let result = await users.insertOne({name:String(name),email:String(email),password:String(hash), mainFolder: defaultFolder.insertedId })
-        let user = await users.findOne({_id:result.insertedId})
-        defaultFolder.user = result.insertedId
+        let user = await users.findOne({_id:result.insertedId}
+        defaultFolder.user = result.insertedI
         await folders.findOneAndUpdate({_id:defaultFolder.insertedId},{$set: defaultFolder})
         
         
@@ -87,9 +85,8 @@ var resolvers = {
       })
       // Create a jwt token, with the user Id
       let jwtToken = jwt.sign({id : newUser._id}, process.env.JWTKEY, {expiresIn: "3 days"})
-
       
-      return jwtToken //send token
+      return jwtToken //send toke
     },
     updateUser : async (root,{name, email, password},ctx, info) =>{
       
@@ -98,7 +95,7 @@ var resolvers = {
       // If the args exits, crate the propriety
       // Special checks in the email and password fields is necessary
       if(name){updateSetter.name = name}
-      if(email){
+      if(email)
         let savedUser = await users.findOne({email : String(email)})
         
         if(savedUser !== null){throw Error("This email already exits.")}
@@ -290,7 +287,7 @@ var resolvers = {
             level1 = true
             level2 = await folders.deleteMany({user:ctx.user._id}).then((result)=>{return result.deletedCount > 0 ? true : false})
           }
-          if(level2){
+          if(level2)
             level3 = await users.findOneAndDelete(ctx.user).then((result)=>{return result.value ? true : false})
           }
 
@@ -300,7 +297,7 @@ var resolvers = {
     createInvite: async (root,{noteId, to},ctx,info)=>{
       if(noteId === undefined, to === undefined){throw Error("'noteId' and 'to' are required.")}
       let note = await notes.findOne({_id:ObjectId(noteId),users: ctx.user._id})
-      if(note === null){throw Error("Note not found, or you don't have acess to note.")}
+      if(note === null){throw Error("Note not found, or you don't have acess to note.")
       let sucess = 0;
       let fail = 0;
 
@@ -309,7 +306,7 @@ var resolvers = {
         if(guest === null){
           fail++
           continue
-        }
+        
         let result = await invitations.insertOne({from: ctx.user._id, to: guest._id, note: note._id,response:null})
         let invite = await invitations.findOne({_id: result.insertedId})
 
@@ -318,7 +315,7 @@ var resolvers = {
           pubsub.publish(String(guest._id),{newInvite: invite})
 
         }
-      }
+      
       
       return [sucess, fail]
 
