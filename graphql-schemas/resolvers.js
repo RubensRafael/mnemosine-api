@@ -337,7 +337,7 @@ var resolvers = {
           invite.response = response      
       }
       
-      await invitations.findOneAndUpdate({_id:invite._id},{$set: invite}).then((result)=>{
+      await invitations.findOneAndUpdate({_id:invite._id},{$set: invite}).then(async (result)=>{
            if(result.value){
                let sendInvite = await invitations.findOne({_id:invite._id})
                 pubsub.publish(String(ctx.user._id),{answeredInvite: sendInvite})
