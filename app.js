@@ -1,5 +1,5 @@
 import express from 'express';
-import { Source, parse, execute, subscribe } from 'graphql'
+import { Source, parse, execute, subscribe} from 'graphql'
 import { graphqlHTTP } from 'express-graphql';
 import { makeExecutableSchema } from '@graphql-tools/schema'
 import typeDefs from './graphql-schemas/schema.js';
@@ -9,6 +9,7 @@ import { ObjectId } from 'mongodb';
 import jwt from 'jsonwebtoken';
 import {WebSocketServer} from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
+import cors from 'cors';
 const port = process.env.PORT || 3000
 
 
@@ -17,7 +18,7 @@ const executableSchema = makeExecutableSchema({
   typeDefs,
   resolvers
 })
-       
+
 const loggingMiddleware = async (req, res, next) => {
     
     res.header("Content-Type",'application/json');
@@ -67,7 +68,7 @@ const loggingMiddleware = async (req, res, next) => {
     }  
 }
 
-
+app.use(cors())
 app.use(express.json())
 app.post("/graphql",loggingMiddleware)
 
