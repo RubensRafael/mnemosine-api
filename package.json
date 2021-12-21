@@ -38,7 +38,7 @@
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^4.1.4",
     "ws": "^8.3.0",
-    "cors":"^2.8.5"
+    "cors":"2.8.5"
   },
   "devDependencies": {
     "nodemon": "^2.0.15"
