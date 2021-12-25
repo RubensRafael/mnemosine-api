@@ -11,7 +11,7 @@ var typeDefs = `
       title: String!
       content: String!
       createdAt: String!
-      expiresIn: String
+      expiresIn: Int!
       completed: Boolean!
       owner : ID!
       users: [LiteUser!]!
@@ -70,8 +70,8 @@ var typeDefs = `
     deleteUser : Boolean!
     createFolder(folderName: String) : UniqueFolder!
     updateFolder(folderId: String, newFolderName: String = "", toMain: Boolean = false) : UniqueFolder!
-    createNote(title: String, content: String, createdAt: String, expiresIn: String = "Never" ,folderId: String = ""): Note!
-    updateNote(noteId: String, title: String, content: String, expiresIn: String, fromFolder: String, toFolder: String, complete: Boolean, modifiedAt: String): Note!
+    createNote(title: String, content: String, createdAt: String, expiresIn: Int = 0 ,folderId: String = ""): Note!
+    updateNote(noteId: String, title: String, content: String, expiresIn: Int, fromFolder: String, toFolder: String, complete: Boolean, modifiedAt: String): Note!
     deleteTarget(level: Int, targetId: String): [Boolean!]!
     createInvite(noteId: String, to: String): [Int!]!
     responseInvite(inviteId: String, response: Boolean): Boolean!
