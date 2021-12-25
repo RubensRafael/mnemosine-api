@@ -186,7 +186,7 @@ var resolvers = {
         title: String(title),
         content: String(content),
         createdAt: String(createdAt),
-        expiresIn: expiresIn,
+        expiresIn: String(expiresIn),
         completed: false,
         owner : ObjectId(ctx.user._id),
         users: [ObjectId(ctx.user._id)],
@@ -216,7 +216,7 @@ var resolvers = {
       
       if(title !== undefined){note.title = String(title)}
       if(content !== undefined){note.content = String(content)}
-      if(expiresIn !== undefined){note.expiresIn = expiresIn}
+      if(expiresIn !== undefined){note.expiresIn = String(expiresIn)}
       if(complete !== undefined){note.completed = complete}
       if(fromFolder !== undefined && toFolder !== undefined){
         let origin = await folders.findOne({_id:ObjectId(fromFolder), user: ctx.user._id})
