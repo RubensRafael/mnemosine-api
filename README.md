@@ -1,5 +1,7 @@
 # Mnemosine
 
+Api de um app de anotações feita com graphql.
+
 ```
 
 type Modification{
