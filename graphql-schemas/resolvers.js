@@ -51,7 +51,7 @@ var resolvers = {
         if(result === false){throw Error("The 'email' or the 'password' is wrong.")}
       })
       // Create a jwt token, with the user Id
-      let jwtToken = jwt.sign({id : user._id}, process.env.JWTKEY, {expiresIn: "3 days"})
+      let jwtToken = jwt.sign({id : user._id}, process.env.JWTKEY)
 
       return jwtToken //send token
     },
@@ -86,7 +86,7 @@ var resolvers = {
         return user
       })
       // Create a jwt token, with the user Id
-      let jwtToken = jwt.sign({id : newUser._id}, process.env.JWTKEY, {expiresIn: "3 days"})
+      let jwtToken = jwt.sign({id : newUser._id}, process.env.JWTKEY)
 
       
       return jwtToken //send token
