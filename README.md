@@ -1,6 +1,7 @@
 # Mnemosine
 
 Api de um app de anotações feita com graphql, consumida pelo app front-end [Mnemosine](https://github.com/RubensRafael/Mnemosine).
+MongoDB foi usado como banco de dados, e a autenticação foi feita com json web token, se quiser saber mais sobre como construir um sistema de login jwt no graphql, eu fiz um artigo sobre isso, que você pode encontrar [aqui](https://medium.com/@rubensrafael2/como-implementar-um-sistema-de-login-efetivo-baseado-em-json-web-token-com-express-graphql-d14866608827).
 
 ```
 
