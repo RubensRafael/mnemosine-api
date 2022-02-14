@@ -1,6 +1,6 @@
 # Mnemosine
 
-Api de um app de anotações feita com graphql.
+Api de um app de anotações feita com graphql, consumida pelo app front-end [Mnemosine](https://github.com/RubensRafael/Mnemosine).
 
 ```
 
